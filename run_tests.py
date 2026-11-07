@@ -10,6 +10,7 @@ import sys
 import test_export
 import test_guest
 import test_hashring
+import test_main
 import test_move
 from testkit import LINE, run_suite
 
@@ -17,7 +18,8 @@ SUITES = [
     ("Member 1 — HashRing (test_hashring.py)", test_hashring.TEST_CLASSES),
     ("Member 2 — guests, rooms, indexes (test_guest.py)", test_guest.TEST_CLASSES),
     ("Member 3 — add/remove node, moves, hash mod N (test_move.py)", test_move.TEST_CLASSES),
-    ("Member 4 — CSV, experiments, menu (test_export.py)", test_export.TEST_CLASSES),
+    ("Member 4 — CSV, experiments, menu input (test_export.py)", test_export.TEST_CLASSES),
+    ("Member 4 — text menu, keyboard simulated (test_main.py)", test_main.TEST_CLASSES),
 ]
 
 

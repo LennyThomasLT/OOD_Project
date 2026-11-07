@@ -38,6 +38,7 @@ Every test prints what it checks, the expected value, the actual value and PASS/
 | `experiments.py`, `plot.py` | Experiments A/B/C and graphs | 4 |
 | `testkit.py`, `run_tests.py` | Shared test output format, run all tests | 4 |
 | `test_hashring.py`, `test_guest.py`, `test_move.py`, `test_export.py` | Tests of members 1, 2, 3, 4 | 1–4 |
+| `test_main.py` | Menu tests: keyboard input is simulated, same steps as the manual test cases | 4 |
 | `results/` | Experiment CSVs, sample guest/move CSVs, graphs, `run_info.csv` | — |
 
 ## Main conventions

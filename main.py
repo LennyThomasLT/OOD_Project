@@ -200,26 +200,30 @@ class App:
         ("0", "ออกจากโปรแกรม", None),
     ]
 
+    def handle(self, choice):
+        """Run one menu choice. Returns False when the user chooses to exit."""
+        choice = choice.strip()
+        if choice == "0":
+            print("ออกจากโปรแกรม")
+            return False
+        name = {k: n for k, _, n in self.MENU}.get(choice)
+        if name is None:
+            print("  ! ไม่มีเมนูนี้ กรุณาเลือกใหม่")
+        elif name == "add_node":
+            self.change_node("add")
+        elif name == "remove_node":
+            self.change_node("remove")
+        else:
+            getattr(self, name)()
+        return True
+
     def run(self):
-        actions = {k: name for k, _, name in self.MENU}
         while True:
             print("\n========== Distributed Hilbert's Hotel ==========")
             for key, label, _ in self.MENU:
                 print(f"  {key:>2}. {label}")
-            choice = input("เลือกเมนู: ").strip()
-            if choice == "0":
-                print("ออกจากโปรแกรม")
+            if not self.handle(input("เลือกเมนู: ")):
                 return
-            name = actions.get(choice)
-            if name is None:
-                print("  ! ไม่มีเมนูนี้ กรุณาเลือกใหม่")
-            elif name == "add_node":
-                self.change_node("add")
-            elif name == "remove_node":
-                self.change_node("remove")
-            else:
-                getattr(self, name)()
-
 
 if __name__ == "__main__":
     try:
