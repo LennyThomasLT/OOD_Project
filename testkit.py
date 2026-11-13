@@ -1,15 +1,3 @@
-"""
-testkit.py — shared test output format for every member's test file
-
-Each test prints:
-    TEST n: <what the test is about>
-      Check    : <what is being checked>
-      Expected : <expected value>
-      Actual   : <actual value>
-      Result   : PASS / FAIL
-and run_suite() prints a summary at the end.
-"""
-
 import os
 import sys
 import unittest
@@ -25,7 +13,6 @@ def _short(value, limit=90):
 
 
 class ReportTestCase(unittest.TestCase):
-    """Base class: prints a header per test and a block per check."""
 
     def setUp(self):
         stats["test_no"] += 1
@@ -43,12 +30,10 @@ class ReportTestCase(unittest.TestCase):
         self.assertEqual(actual, expected, what)
 
     def note(self, label, text):
-        """Extra information line, e.g. the message shown to the user."""
         print(f"  {label:<9}: {text}\n")
 
 
 def load_suite(classes):
-    """Load tests in the order they are written in the file."""
     suite = unittest.TestSuite()
     for cls in classes:
         names = [n for n in cls.__dict__ if n.startswith("test_")]
@@ -57,10 +42,6 @@ def load_suite(classes):
 
 
 def run_suite(title, classes):
-    """
-    Run the tests and print the summary.
-    Returns (tests_passed, tests_run, checks_passed, checks) for run_tests.py.
-    """
     stats.update(test_no=0, checks=0, checks_passed=0)
     print(f"\n{'#' * 72}\n# {title}\n{'#' * 72}")
     with open(os.devnull, "w") as devnull:

@@ -1,15 +1,3 @@
-"""
-plot.py — graphs from the experiment CSV files (Member 4)
-
-Run after experiments.py:   python plot.py
-Needs matplotlib (pip install matplotlib). Only this file uses it; the program and the
-experiments work without it. If matplotlib is not allowed, open the *_summary.csv
-files in Excel and draw the same graphs there.
-
-Every point is the median of 3 rounds (salt 0, 1, 2); error bars show min–max.
-Output: results/graph_A_time_vs_K.png, graph_B_moves_vs_N.png, graph_C_effect_of_V.png
-"""
-
 import csv
 
 import matplotlib
@@ -25,7 +13,6 @@ def read_summary(path):
 
 
 def series(rows, x_col, metric, **where):
-    """Sorted (x, median, err_low, err_high) for one metric."""
     pts = []
     for r in rows:
         if r["metric"] != metric or any(r[k] != str(v) for k, v in where.items()):
@@ -60,7 +47,7 @@ def graph_a():
     line(right, rows, "K", "locate_on_ring_us", "Compute node on ring (bisect)")
     line(right, rows, "K", "add_per_guest_us", "Add one guest (average)")
     right.set_xscale("log")
-    right.set_ylim(0, right.get_ylim()[1] * 1.5)   # room for the legend above the lines
+    right.set_ylim(0, right.get_ylim()[1] * 1.5)
     right.set_xlabel("Number of guests K (log scale)")
     right.set_ylabel("Time per operation (microseconds)")
     right.set_title("Time per operation (batch of 1,000 / 1,000)")

@@ -1,24 +1,12 @@
-"""
-main.py — text menu (Member 4)
-
-Run:  python main.py
-
-The menu only reads input and shows results. All rules live in hashring.py,
-guest.py, hotel.py and modn.py (logic is separate from the interface, section 6).
-Large lists show only the first rows on screen together with the total;
-CSV export always writes everything.
-"""
-
 import time
 
 from export import export_guests, export_moves
 from hotel import HotelSystem
 
-SHOW = 20   # rows shown on screen for long lists
+SHOW = 20
 
 
 def parse_int(text, minimum=1):
-    """Return (value, None) or (None, error message). Never raises."""
     text = text.strip()
     try:
         value = int(text)
@@ -30,7 +18,6 @@ def parse_int(text, minimum=1):
 
 
 def ask_int(prompt, minimum=1, default=None):
-    """Ask until a valid integer is typed. Empty input uses the default if there is one."""
     while True:
         hint = f" [{default}]" if default is not None else ""
         text = input(f"{prompt}{hint}: ")
@@ -53,7 +40,6 @@ class App:
         self.hotel = None
         self.last_report = None
 
-    # ---------- helpers ----------
     def need_hotel(self):
         if self.hotel is None:
             print("  ! ยังไม่ได้เริ่มระบบ กรุณาเลือกเมนู 1 ก่อน")
@@ -64,7 +50,6 @@ class App:
     def result(ok, msg):
         print(("  ✓ " if ok else "  ! ") + msg)
 
-    # ---------- menu actions ----------
     def start(self):
         if self.hotel is not None:
             ans = input("  ระบบเริ่มไว้แล้ว ต้องการล้างข้อมูลแล้วเริ่มใหม่หรือไม่ (y/n): ")
@@ -183,7 +168,6 @@ class App:
         except OSError as e:
             print(f"  ! บันทึกไฟล์ไม่ได้: {e}")
 
-    # ---------- loop ----------
     MENU = [
         ("1", "เริ่มระบบ (N, V, ช่องทาง, แขกต่อช่องทาง, salt)", "start"),
         ("2", "เพิ่มแขก 1 คน", "add_guest"),
@@ -201,7 +185,6 @@ class App:
     ]
 
     def handle(self, choice):
-        """Run one menu choice. Returns False when the user chooses to exit."""
         choice = choice.strip()
         if choice == "0":
             print("ออกจากโปรแกรม")

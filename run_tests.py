@@ -1,10 +1,3 @@
-"""
-run_tests.py — run every member's tests and print one overall summary (Member 4)
-
-Run:  python run_tests.py
-Exit code is 0 when everything passes, 1 otherwise.
-"""
-
 import sys
 
 import test_export

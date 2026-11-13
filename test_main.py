@@ -1,14 +1,3 @@
-"""
-test_main.py — Member 4 tests of the text menu (main.py)
-
-The keyboard is simulated: each step gives the menu choice and the values a user would type,
-then checks the result line the menu prints. The steps are the same as the manual test cases
-(part A: normal system, part B: no guests), so the menu is tested without anyone typing.
-
-Run:  python test_main.py
-      (also works with: python -m unittest test_main)
-"""
-
 import contextlib
 import csv
 import io
@@ -32,10 +21,9 @@ class MenuTestCase(ReportTestCase):
         return os.path.join(self._tmp.name, name)
 
     def run_step(self, choice, *typed):
-        """Simulate one menu choice plus what the user types; return the printed text."""
         answers = iter(str(x) for x in typed)
         original = getattr(menu, "input", None)
-        menu.input = lambda prompt="": next(answers)      # replaces the keyboard
+        menu.input = lambda prompt="": next(answers)
         out = io.StringIO()
         try:
             with contextlib.redirect_stdout(out):
@@ -49,7 +37,6 @@ class MenuTestCase(ReportTestCase):
 
     @staticmethod
     def result_line(text):
-        """Last line starting with ✓ or ! (the result message)."""
         lines = [l.strip() for l in text.splitlines() if l.strip().startswith(("✓", "!"))]
         return lines[-1] if lines else text.strip()
 
@@ -65,14 +52,12 @@ def rows(path):
         return len(list(csv.reader(f))) - 1
 
 
-# ======================================================================
 class TestMenuSession(MenuTestCase):
     def setUp(self):
         super().setUp()
-        self.run_step(1, 5, 8, 3, 10, "0")   # N=5, V=8, 3 channels x 10 guests, salt 0
+        self.run_step(1, 5, 8, 3, 10, "0")
 
     def test_before_setup(self):
-        """Steps 1–2: using the menu before setup, then starting the system"""
         app = self.app
         self.app = menu.App()
         self.step(1, "list rooms before setup", 9, [], "! ยังไม่ได้เริ่มระบบ กรุณาเลือกเมนู 1 ก่อน")
@@ -80,14 +65,12 @@ class TestMenuSession(MenuTestCase):
         self.app = app
 
     def test_search(self):
-        """Steps 3–6: search by guest code and by address"""
         self.step(3, "find guest", 5, [1, 1], "✓ แขก (1, 1) อยู่อาคาร 2 ห้อง 1")
         self.step(4, "find guest", 5, [2, 3], "✓ แขก (2, 3) อยู่อาคาร 4 ห้อง 9")
         self.step(5, "find room", 6, [3, 5], "✓ อาคาร 3 ห้อง 5: แขกรหัส (2, 2)")
         self.step(6, "find room (empty)", 6, [3, 99], "! ไม่พบผู้พักที่อาคาร 3 ห้อง 99")
 
     def test_add_remove_guests(self):
-        """Steps 7–14: add/remove guests, duplicates, groups, bad input"""
         self.step(7, "add duplicate guest", 2, [1, 1], "! มีแขกรหัส (1, 1) อยู่แล้ว ไม่เพิ่มซ้ำ")
         self.step(8, "add guest, new channel", 2, [9, 3], "✓ เพิ่มแขก (9, 3) -> อาคาร 4 ห้อง 58")
         self.step(9, "group with duplicates", 3, [2, 9, 5],
@@ -106,7 +89,6 @@ class TestMenuSession(MenuTestCase):
             self.run_step(choice, *typed)
 
     def test_add_remove_nodes(self):
-        """Steps 15–18: add/remove nodes and the move lists"""
         self._to_step_14()
         self.step(15, "add existing node", 7, [3], "! ไม่สำเร็จ: มีอาคาร 3 อยู่แล้ว ไม่เพิ่มซ้ำ")
         self.step(16, "add node 6", 7, [6], "✓ เพิ่มอาคาร 6 แล้ว: ย้าย 7 จาก 33 คน (อัตรา 0.2121 = 21.21%)")
@@ -119,7 +101,6 @@ class TestMenuSession(MenuTestCase):
         self.step("18b", "find (1, 1) after it moved", 5, [1, 1], "✓ แขก (1, 1) อยู่อาคาร 4 ห้อง 1")
 
     def test_stats_list_export(self):
-        """Steps 19–23: load stats, room list, CSV export, unknown menu"""
         self._to_step_14()
         self.run_step(7, 6)
         self.run_step(8, 2)
@@ -140,8 +121,7 @@ class TestMenuSession(MenuTestCase):
 
 class TestMenuNoGuests(MenuTestCase):
     def test_no_guests(self):
-        """Steps 24–29: restart with no guests, removing the last node, exit"""
-        self.run_step(1, 5, 8, 3, 10, "0")          # a running system, as at the end of part A
+        self.run_step(1, 5, 8, 3, 10, "0")
         self.step(24, "restart with 1 node, 0 guests", 1, ["y", 1, 4, 0, 0, "0"],
                   "✓ เริ่มระบบแล้ว: 1 อาคาร, V = 4, แขก 0 คน")
         out = self.run_step(10)
@@ -154,13 +134,11 @@ class TestMenuNoGuests(MenuTestCase):
         self.check("Step 29: menu 0 stops the loop (handle returns False)", False, keep_running)
 
     def test_export_moves_before_any_change(self):
-        """Edge case — exporting moves before any node change is refused politely"""
         self.run_step(1, 3, 4, 1, 5, "0")
         self.step("-", "export moves with no move list", 12, [],
                   "! ยังไม่มีรายการย้าย (ต้องเพิ่มหรือลบอาคารสำเร็จก่อน)")
 
 
-# ======================================================================
 TEST_CLASSES = [TestMenuSession, TestMenuNoGuests]
 
 if __name__ == "__main__":

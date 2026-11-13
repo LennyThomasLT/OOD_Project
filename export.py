@@ -1,15 +1,3 @@
-"""
-export.py — CSV export, UTF-8 (Member 4)
-
-- export_guests : one row per guest, columns channel_id, sequence_id, node_id, room_no
-                  (row count always equals K, the number of guests in the system)
-- export_moves  : one row per mover from a MoveReport
-- export_rows   : any list of dicts (experiment results)
-
-Every function returns the number of data rows written (header not counted).
-Big-O: export_guests is O(K log K) because rows are written in room-list order.
-"""
-
 import csv
 import os
 
@@ -25,7 +13,7 @@ def _open(path):
 
 
 def export_guests(hotel, path):
-    rows = hotel.list_rooms()                  # sorted by node_id, room_no
+    rows = hotel.list_rooms()
     with _open(path) as f:
         w = csv.writer(f)
         w.writerow(GUEST_FIELDS)

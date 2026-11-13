@@ -1,12 +1,3 @@
-"""
-test_hashring.py — Member 1 tests
-
-Run:  python test_hashring.py
-      (also works with: python -m unittest test_hashring)
-
-Every test prints what it checks, the expected value, the actual value and PASS/FAIL.
-"""
-
 import hashlib
 import os
 import subprocess
@@ -15,11 +6,11 @@ import sys
 from hashring import HashRing, RING_SIZE, guest_key, hash64, node_key
 from testkit import ReportTestCase, main
 
-# ---------- Mock data for the section 9.1 example (V = 1, positions fixed by hand) ----------
+
 A, B, C, D = 1, 2, 3, 4
 NAME = {A: "A", B: "B", C: "C", D: "D"}
 
-# 7 guests (channel 1, sequence 1..7) at the positions from the table
+
 GUESTS = [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7)]
 GUEST_POS = [10, 20, 25, 35, 50, 70, 90]
 
@@ -43,21 +34,17 @@ def owners(ring):
     return [NAME[ring.locate(c, s)] for c, s in GUESTS]
 
 
-# ======================================================================
 class TestHashFunction(ReportTestCase):
     def test_sha256_first_8_bytes(self):
-        """Hash = first 8 bytes of SHA-256, read big-endian"""
         text = "|guest:1:1"
         expected = int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:8], "big")
         self.check(f"hash64({text!r})", expected, hash64(text))
 
     def test_range(self):
-        """Every hash value is within 0 .. 2^64 - 1"""
         out_of_range = [i for i in range(1000) if not (0 <= hash64(f"x{i}") < RING_SIZE)]
         self.check("values out of range among 1,000 hashes", [], out_of_range)
 
     def test_same_value_across_runs(self):
-        """Hash is the same after restarting the program (Python's hash() is not used)"""
         here = os.path.dirname(os.path.abspath(__file__))
         code = "from hashring import hash64; print(hash64('|guest:3:7'))"
         results = []
@@ -70,20 +57,16 @@ class TestHashFunction(ReportTestCase):
                    [hash64("|guest:3:7")] * 3, results)
 
     def test_key_formats(self):
-        """Guest and node strings use separate, fixed formats"""
         self.check("guest_key(1, 2, salt='0')", "0|guest:1:2", guest_key(1, 2, "0"))
         self.check("node_key(1, 2, salt='0')", "0|node:1:2", node_key(1, 2, "0"))
 
 
-# ======================================================================
 class TestExample91(ReportTestCase):
     def test_initial(self):
-        """Section 9.1 — initial ring A=20, B=50, C=80"""
         self.check("owners of guests at 10, 20, 25, 35, 50, 70, 90",
                    ["A", "A", "B", "B", "B", "C", "A"], owners(ring_abc()))
 
     def test_add_D(self):
-        """Section 9.1 — add D at 35 (2 guests must move)"""
         ring = ring_abc()
         before = owners(ring)
         ok, msg = ring.add_node(D)
@@ -96,7 +79,6 @@ class TestExample91(ReportTestCase):
                    ["D"] * len(moved), [a for _, a in moved])
 
     def test_remove_B(self):
-        """Section 9.1 — remove B from the initial ring (3 guests must move)"""
         ring = ring_abc()
         before = owners(ring)
         ok, msg = ring.remove_node(B)
@@ -109,33 +91,27 @@ class TestExample91(ReportTestCase):
                    ["B"] * len(moved), [b for b, _ in moved])
 
 
-# ======================================================================
 class TestLocate(ReportTestCase):
     def test_exact_point(self):
-        """Guest exactly on a node point belongs to that node (>= rule)"""
         ring = ring_abc()
         self.check("locate_position(20)", "A", NAME[ring.locate_position(20)])
         self.check("locate_position(50)", "B", NAME[ring.locate_position(50)])
 
     def test_between_points(self):
-        """Guest between two points belongs to the next point clockwise"""
         ring = ring_abc()
         self.check("locate_position(21)", "B", NAME[ring.locate_position(21)])
         self.check("locate_position(79)", "C", NAME[ring.locate_position(79)])
 
     def test_wrap_around(self):
-        """Guest after the last point wraps to the first point"""
         ring = ring_abc()
         self.check("locate_position(81)", "A", NAME[ring.locate_position(81)])
         self.check("locate_position(2^64 - 1)", "A", NAME[ring.locate_position(RING_SIZE - 1)])
         self.check("locate_position(0)", "A", NAME[ring.locate_position(0)])
 
     def test_empty_ring(self):
-        """Locating on an empty ring returns None instead of crashing"""
         self.check("HashRing(1).locate(1, 1)", None, HashRing(1).locate(1, 1))
 
     def test_vnode_collision(self):
-        """Colliding virtual nodes are all kept and sorted by (pos, node_id, j)"""
         tbl = {node_key(7, 0): 40, node_key(3, 0): 40, node_key(9, 0): 60, guest_key(1, 1): 40}
         ring = HashRing(1, hash_fn=lambda t: tbl[t])
         for n in (7, 3, 9):
@@ -147,7 +123,6 @@ class TestLocate(ReportTestCase):
         self.check("after removing node 3, guest at 40 goes to node 7", 7, ring.locate(1, 1))
 
     def test_guests_same_position(self):
-        """Several guests may hash to the same position"""
         tbl = {node_key(1, 0): 50, guest_key(1, 1): 30, guest_key(2, 5): 30}
         ring = HashRing(1, hash_fn=lambda t: tbl[t])
         ring.add_node(1)
@@ -155,10 +130,8 @@ class TestLocate(ReportTestCase):
                    [1, 1], [ring.locate(1, 1), ring.locate(2, 5)])
 
 
-# ======================================================================
 class TestAddRemove(ReportTestCase):
     def test_v_points_per_node(self):
-        """Each node has exactly V points; removing a node removes all of them"""
         ring = HashRing(32, salt="0")
         for n in range(1, 11):
             ring.add_node(n)
@@ -170,7 +143,6 @@ class TestAddRemove(ReportTestCase):
                    sum(1 for p in ring.points() if p[1] == 4))
 
     def test_add_keeps_old_points(self):
-        """Adding a node does not change any existing point"""
         ring = HashRing(8)
         for n in (1, 2, 3):
             ring.add_node(n)
@@ -179,7 +151,6 @@ class TestAddRemove(ReportTestCase):
         self.check("all old points still present", True, old.issubset(set(ring.points())))
 
     def test_remove_keeps_other_points(self):
-        """Removing a node does not change the other nodes' points"""
         ring = HashRing(8)
         for n in (1, 2, 3):
             ring.add_node(n)
@@ -189,7 +160,6 @@ class TestAddRemove(ReportTestCase):
         self.check("points after removing node 2 are unchanged", expected, ring.points())
 
     def test_build_same_as_add(self):
-        """build() gives the same ring as calling add_node one by one"""
         r1, r2 = HashRing(16, salt="1"), HashRing(16, salt="1")
         for n in range(1, 6):
             r1.add_node(n)
@@ -197,7 +167,6 @@ class TestAddRemove(ReportTestCase):
         self.check("rings are identical", True, r1.points() == r2.points())
 
     def test_salt(self):
-        """Same salt -> same position; different salt -> different position"""
         p0a = HashRing(4, "0").guest_position(1, 1)
         p0b = HashRing(4, "0").guest_position(1, 1)
         p1 = HashRing(4, "1").guest_position(1, 1)
@@ -205,17 +174,14 @@ class TestAddRemove(ReportTestCase):
         self.check("salt '0' vs salt '1' gives different positions", True, p0a != p1)
 
     def test_nodes_sorted(self):
-        """nodes() returns node IDs in ascending order"""
         ring = HashRing(2)
         for n in (10, 2, 7):
             ring.add_node(n)
         self.check("nodes() after adding 10, 2, 7", [2, 7, 10], ring.nodes())
 
 
-# ======================================================================
 class TestEdgeCases(ReportTestCase):
     def test_add_duplicate(self):
-        """Edge case — adding an existing node ID is rejected, ring unchanged"""
         ring = ring_abc()
         before = ring.points()
         ok, msg = ring.add_node(A)
@@ -224,7 +190,6 @@ class TestEdgeCases(ReportTestCase):
         self.check("ring unchanged", before, ring.points())
 
     def test_remove_missing(self):
-        """Edge case — removing a node that does not exist is rejected, ring unchanged"""
         ring = ring_abc()
         before = ring.points()
         ok, msg = ring.remove_node(99)
@@ -233,7 +198,6 @@ class TestEdgeCases(ReportTestCase):
         self.check("ring unchanged", before, ring.points())
 
     def test_remove_last(self):
-        """Edge case — the last node cannot be removed"""
         ring = HashRing(4)
         ring.add_node(1)
         ok, msg = ring.remove_node(1)
@@ -243,13 +207,11 @@ class TestEdgeCases(ReportTestCase):
         self.check("points left", 4, ring.point_count())
 
     def test_build_bad_input(self):
-        """Edge case — build() rejects empty lists, duplicate IDs and non-empty rings"""
         self.check("build([]) -> ok", False, HashRing(2).build([])[0])
         self.check("build([1, 1]) -> ok", False, HashRing(2).build([1, 1])[0])
         self.check("build([5]) on a ring that already has nodes -> ok", False, ring_abc().build([5])[0])
 
     def test_invalid_v(self):
-        """Edge case — V must be an integer >= 1"""
         rejected = []
         for bad in (0, -1, 1.5, "3", True):
             try:
@@ -259,7 +221,6 @@ class TestEdgeCases(ReportTestCase):
         self.check("values of V that were rejected", [0, -1, 1.5, "3", True], rejected)
 
 
-# ======================================================================
 TEST_CLASSES = [TestHashFunction, TestExample91, TestLocate, TestAddRemove, TestEdgeCases]
 
 if __name__ == "__main__":

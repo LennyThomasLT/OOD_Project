@@ -1,28 +1,3 @@
-"""
-experiments.py — experiments A, B, C from section 7 (Member 4)
-
-Run:  python experiments.py            (full sizes from the spec)
-      python experiments.py --quick    (small sizes, for a fast check only)
-
-Method (section 7.1 / 7.2)
-- Guests come from 10 channels, spread as evenly as possible (sizes differ by at most 1).
-- Each experiment runs 3 rounds with salt "0", "1", "2". In a round, consistent hashing and
-  hash mod N use the same salt, guests, node IDs and hash values.
-- Time: time.perf_counter(); ring build, adding guests, search, sorting and add/remove node are
-  timed separately; no keyboard, printing or file writing inside a timed section.
-  Searches are timed as a batch of 1,000 and divided by 1,000.
-- Memory: tracemalloc, measured in a SEPARATE run from the timing run. Reported in MiB
-  (1 MiB = 1,048,576 bytes); it is memory traced by Python, not the whole process.
-- Each summary reports the median of the 3 rounds plus min and max.
-- Experiment B removes node 1 (the first node added) for both methods, and adds node N + 1.
-
-Output (folder results/)
-- exp_A_runs.csv, exp_B_runs.csv, exp_C_runs.csv, exp_C_loads.csv : one row per round
-- exp_A_summary.csv, exp_B_summary.csv, exp_C_summary.csv          : median / min / max
-- sample_guests.csv, sample_moves_add.csv, sample_moves_remove.csv  : sample data
-- run_info.csv : Python version, machine, parameters
-"""
-
 import gc
 import platform
 import statistics
@@ -41,9 +16,7 @@ OUT = "results"
 MIB = 1024 * 1024
 
 
-# ---------------------------------------------------------------- helpers
 def channel_counts(k, channels=CHANNELS):
-    """Spread K guests over the channels; sizes differ by at most 1."""
     base, extra = divmod(k, channels)
     return [base + (1 if i < extra else 0) for i in range(channels)]
 
@@ -54,16 +27,14 @@ def guest_keys(k, channels=CHANNELS):
 
 
 def sample_keys(keys, n=BATCH):
-    """n codes spread evenly over the guest list (same every run)."""
     step = max(1, len(keys) // n)
     picked = keys[::step][:n]
-    while len(picked) < n:              # fewer guests than n: repeat
+    while len(picked) < n:
         picked += picked[:n - len(picked)]
     return picked
 
 
 def build(n, v, k, salt):
-    """Build a hotel; returns (hotel, ring build seconds, add-all-guests seconds)."""
     h = HotelSystem(v, salt=salt)
     gc.collect()
     t0 = time.perf_counter()
@@ -76,7 +47,6 @@ def build(n, v, k, salt):
 
 
 def memory_of(fn):
-    """Run fn() under tracemalloc; return (result, current MiB, peak MiB)."""
     gc.collect()
     tracemalloc.start()
     result = fn()
@@ -86,7 +56,6 @@ def memory_of(fn):
 
 
 def summarize(rows, group_by, metrics):
-    """Median / min / max of each metric over the rounds with the same parameters."""
     groups = {}
     for r in rows:
         groups.setdefault(tuple(r[g] for g in group_by), []).append(r)
@@ -107,7 +76,6 @@ def log(text):
     print(text, flush=True)
 
 
-# ---------------------------------------------------------------- experiment A
 def experiment_a(ks, n=10, v=32):
     rows = []
     for k in ks:
@@ -144,7 +112,6 @@ def experiment_a(ks, n=10, v=32):
     return rows, summarize(rows, ["K", "N", "V"], metrics)
 
 
-# ---------------------------------------------------------------- experiment B
 def consistent_change(n, v, k, salt, action, node_id):
     h, _, _ = build(n, v, k, salt)
     rep = h.add_node(node_id) if action == "add" else h.remove_node(node_id)
@@ -156,12 +123,12 @@ def modn_change(n, k, salt, action, node_id):
     keys = guest_keys(k)
     m = ModNHashing(salt=salt)
     m.build(range(1, n + 1))
-    stored = m.assign(keys)                         # current node of every guest
+    stored = m.assign(keys)
     gc.collect()
     t0 = time.perf_counter()
     m.add_node(node_id) if action == "add" else m.remove_node(node_id)
     t1 = time.perf_counter()
-    moves = moves_between(stored, m.assign(keys))   # recompute all K and compare
+    moves = moves_between(stored, m.assign(keys))
     t2 = time.perf_counter()
     for c, s, _old, new in moves:
         stored[(c, s)] = new
@@ -189,7 +156,6 @@ def experiment_b(ns, k=10000, v=32):
     return rows, summarize(rows, ["N", "K", "V", "method", "action", "changed_node"], metrics)
 
 
-# ---------------------------------------------------------------- experiment C
 def experiment_c(vs, n=10, k=10000):
     rows, loads = [], []
     for v in vs:
@@ -220,7 +186,6 @@ def experiment_c(vs, n=10, k=10000):
     return rows, loads, summarize(rows, ["V", "N", "K", "M"], metrics)
 
 
-# ---------------------------------------------------------------- samples
 def samples(n=10, v=32, k=1000, salt="0"):
     h, _, _ = build(n, v, k, salt)
     rows = export_guests(h, f"{OUT}/sample_guests.csv")
@@ -231,7 +196,6 @@ def samples(n=10, v=32, k=1000, salt="0"):
     log(f"  samples: {rows} guests, add moved {rep_add.count}, remove moved {rep_rem.count}")
 
 
-# ---------------------------------------------------------------- main
 def main():
     quick = "--quick" in sys.argv
     ks = [1000, 10000] if quick else [1000, 10000, 100000]
